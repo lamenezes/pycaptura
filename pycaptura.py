@@ -1,6 +1,5 @@
 # -*- encoding:utf-8 -*-
 
-# __builtin__
 import time
 from threading import Thread
 
@@ -113,11 +112,7 @@ class KeyboardCapture(Thread):
             if key in self.modifier_keys['alt']:
                 mod_pressed['alt'] = True
 
-        if has_pressed:
-            print state, raw_pressed
-
         for keycode in pressed:
-            # XXX: remove this after treating key mods
             keysym = self.display.keycode_to_keysym(keycode, modifier)
             key = self.display.lookup_string(keysym)
             if not key:
