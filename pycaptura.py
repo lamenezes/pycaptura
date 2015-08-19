@@ -1,9 +1,13 @@
 # -*- encoding:utf-8 -*-
 
+import ctypes
+from ctypes import cdll
+from ctypes.util import find_library
 import time
 from threading import Thread
 
-from Xlib.display import Display
+x11 = cdll.LoadLibrary(find_library('X11'))
+display = x11.XOpenDisplay()
 
 
 class KeyboardCapture(Thread):
@@ -30,14 +34,13 @@ class KeyboardCapture(Thread):
         super(KeyboardCapture, self).__init__()
 
         self.sleep_interval = sleep_interval
-        self.display = Display()
         self.last_pressed = 0
         self.last_raw_pressed = []
         self.caps_lock = False
 
-    def parse_keyboard_state(self, state):
+    def parse_keys(self, keys):
         """
-        Parses the result of the function Display.query_keymap
+        Parses the result of the function x11.XQueryKeymap
 
         The function returns a list with 32 integers and each integer represents
         a byte. For example let's suppose the function returns the following list:
@@ -61,6 +64,7 @@ class KeyboardCapture(Thread):
         (Obvious) Note: multiple keys can be pressed at the same time
         """
 
+        keys = [ord(key) for key in keys]
         modifier = 0
         mod_pressed = {
             'ctrl': False, 'shift': False, 'alt': False, 'alt_Gr': False, 'super': False
@@ -68,7 +72,7 @@ class KeyboardCapture(Thread):
         keys_pressed = []
         raw_pressed = []
 
-        for i, num in enumerate(state):
+        for i, num in enumerate(keys):
             if not num:
                 continue
 
@@ -113,8 +117,7 @@ class KeyboardCapture(Thread):
                 mod_pressed['alt'] = True
 
         for keycode in pressed:
-            keysym = self.display.keycode_to_keysym(keycode, modifier)
-            key = self.display.lookup_string(keysym)
+            key = self.keycode_to_string(keycode, modifier)
             if not key:
                 if self.caps_lock and modifier == 1:
                     modifier = 0
@@ -129,10 +132,21 @@ class KeyboardCapture(Thread):
 
         return has_pressed, keys_pressed, mod_pressed
 
+    def keycode_to_string(self, keycode, modifier):
+        keycode = ctypes.c_ubyte(keycode)
+        modifier = ctypes.c_int(modifier)
+        keysym = ctypes.c_ulong()
+        keysym = x11.XKeycodeToKeysym(display, keycode, modifier)
+        keysym_to_string = x11.XKeysymToString
+        keysym_to_string.restype = ctypes.c_char_p
+        return keysym_to_string(keysym)
+
     def run(self):
+        keys_return = ctypes.create_string_buffer(32)
+
         while True:
-            state = self.display.query_keymap()
-            has_pressed, pressed, mods = self.parse_keyboard_state(state)
+            x11.XQueryKeymap(display, keys_return)
+            has_pressed, pressed, mods = self.parse_keys(keys_return)
             if has_pressed:
                 print u') A tecla [%s] foi apertada [%s]' % (pressed, mods)
 
