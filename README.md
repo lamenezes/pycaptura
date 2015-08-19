@@ -1,9 +1,6 @@
 # PyCaptura: Um keylogger para o X Window System
 
 ## Como usar
-É preciso instalar o python-xlib, para isso abra um terminal e digite:
-    `$ sudo pip install python-xlib`
-
 O PyCaptura já vem com um simples keylogger, que imprime na tela tudo o que é digitado. Para rodá-lo digite:
     `python pycaptura.py`
 
