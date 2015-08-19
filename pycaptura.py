@@ -8,6 +8,7 @@ from threading import Thread
 
 x11 = cdll.LoadLibrary(find_library('X11'))
 display = x11.XOpenDisplay()
+keys_return = ctypes.create_string_buffer(32)
 
 
 class KeyboardCapture(Thread):
@@ -20,12 +21,10 @@ class KeyboardCapture(Thread):
     }
 
     modifier_keys = {
-        'ctrl': [37],
-        # 'ctrl_R': 0,
+        'ctrl': [37, 105],
         'shift': [50, 62],
         'caps_lock': 66,
-        'alt': [64],
-        # 'alt_right': 0,
+        'alt': [64, 108],
         'alt_Gr': 108,
         'super': 133,
     }
@@ -142,8 +141,6 @@ class KeyboardCapture(Thread):
         return keysym_to_string(keysym)
 
     def run(self):
-        keys_return = ctypes.create_string_buffer(32)
-
         while True:
             x11.XQueryKeymap(display, keys_return)
             has_pressed, pressed, mods = self.parse_keys(keys_return)
