@@ -6,6 +6,7 @@ from ctypes.util import find_library
 import time
 from threading import Thread
 
+
 x11 = cdll.LoadLibrary(find_library('X11'))
 display = x11.XOpenDisplay()
 keys_return = ctypes.create_string_buffer(32)
@@ -140,13 +141,15 @@ class KeyboardCapture(Thread):
         keysym_to_string.restype = ctypes.c_char_p
         return keysym_to_string(keysym)
 
+    def log_keys(self, has_pressed, pressed, mods):
+        if has_pressed:
+            print(u') A tecla [%s] foi apertada [%s]' % (pressed, mods))
+
     def run(self):
         while True:
             x11.XQueryKeymap(display, keys_return)
             has_pressed, pressed, mods = self.parse_keys(keys_return)
-            if has_pressed:
-                print u') A tecla [%s] foi apertada [%s]' % (pressed, mods)
-
+            self.log_keys(has_pressed, pressed, mods)
             time.sleep(self.sleep_interval)
 
 
